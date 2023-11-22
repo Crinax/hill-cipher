@@ -1,3 +1,10 @@
+mod cipher;
+
+use cipher::alphabets::Russian;
+use crate::cipher::Cipher;
+
 fn main() {
-    println!("Hello, world!");
+    let ru = Russian::new();
+    let cipher = Cipher::new(ru);
+    println!("{:?}", cipher.matrix_from("привет"));
 }
