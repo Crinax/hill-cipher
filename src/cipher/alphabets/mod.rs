@@ -34,4 +34,12 @@ impl Alphabet for Russian {
     fn alphabet(&self) -> &HashMap<char, usize> {
         &self.map
     }
+
+    fn size(&self) -> usize {
+        return Russian::ALPHABET.chars().count()
+    }
+
+    fn get_char(&self, index: usize) -> Option<char> {
+        Russian::ALPHABET.chars().nth(index)
+    }
 }
