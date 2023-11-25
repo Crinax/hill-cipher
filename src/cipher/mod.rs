@@ -9,8 +9,8 @@ use self::alphabets::Russian;
 
 pub trait Alphabet {
     fn has_letter(&self, c: &char) -> bool;
-    fn code(&self, c: &char) -> Option<usize>;
-    fn alphabet(&self) -> &HashMap<char, usize>;
+    fn code(&self, c: &char) -> Option<isize>;
+    fn alphabet(&self) -> &HashMap<char, isize>;
     fn size(&self) -> usize;
     fn get_char(&self, index: usize) -> Option<char>;
 }
@@ -26,7 +26,7 @@ impl<T> Cipher<T> where T: Alphabet {
 }
 
 impl Cipher<Russian> {
-    pub fn encode(&self, message: &str) -> Vec<usize> {
+    pub fn encode(&self, message: &str) -> Vec<isize> {
         let mut another_message = message.to_owned();
         let message_len = another_message.chars().count();
 
@@ -39,7 +39,7 @@ impl Cipher<Russian> {
             .collect()
     }
 
-    pub fn matrix_from(&self, message: &str) -> DMatrix<usize> {
+    pub fn matrix_from(&self, message: &str) -> DMatrix<isize> {
         let result = self.encode(message);
         DMatrix::from_vec_generic(Dyn(result.len() / 3), Dyn(3), result)
     }
@@ -58,11 +58,16 @@ impl Cipher<Russian> {
         "сед".to_owned() + &random_part
     }
 
-    pub fn generate_matrix_key(&self) -> DMatrix<usize> {
+    pub fn generate_matrix_key(&self) -> DMatrix<isize> {
         self.matrix_from(&self.generate_key())
     }
 
-    pub fn get_determinant(&self, matrix: DMatrix<usize>) {
-        matrix.map(|v| v as isize).determinant()
+    pub fn get_transpose(&self, matrix: DMatrix<isize>) -> DMatrix<isize> {
+        matrix.transpose()
+    }
+
+    pub fn get_determinant(&self, matrix: DMatrix<isize>) -> isize {
+        let det: f64 = matrix.map(|v| nalgebra::ComplexField::from_real(v as f64)).determinant();
+        return det as isize
     }
 }

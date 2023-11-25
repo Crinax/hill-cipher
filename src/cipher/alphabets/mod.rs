@@ -3,7 +3,7 @@ use std::{collections::HashMap, borrow::Cow};
 use super::Alphabet;
 
 pub struct Russian {
-    map: HashMap<char, usize>,
+    map: HashMap<char, isize>,
 }
 
 impl Russian {
@@ -12,11 +12,11 @@ impl Russian {
     );
 
     pub fn new() -> Self {
-        let alphabets_and_index: HashMap<char, usize> =
+        let alphabets_and_index: HashMap<char, isize> =
             Self::ALPHABET
             .chars()
             .enumerate()
-            .map(|(i, c)| (c, i))
+            .map(|(i, c)| (c, i as isize))
             .collect();
         Self { map: alphabets_and_index }
     }
@@ -27,11 +27,11 @@ impl Alphabet for Russian {
         self.map.contains_key(c)
     }
 
-    fn code(&self, c: &char) -> Option<usize> {
+    fn code(&self, c: &char) -> Option<isize> {
         self.map.get(c).copied()
     }
 
-    fn alphabet(&self) -> &HashMap<char, usize> {
+    fn alphabet(&self) -> &HashMap<char, isize> {
         &self.map
     }
 
