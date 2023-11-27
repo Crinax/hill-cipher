@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use nalgebra::{DMatrix, Dyn};
 use rand::Rng;
 
+use crate::math;
+
 use self::alphabets::Russian;
 
 pub trait Alphabet {
@@ -58,10 +60,6 @@ impl Cipher<Russian> {
         "сед".to_owned() + &random_part
     }
 
-    pub fn generate_matrix_key(&self) -> DMatrix<isize> {
-        self.matrix_from(&self.generate_key())
-    }
-
     pub fn get_transpose(&self, matrix: DMatrix<isize>) -> DMatrix<isize> {
         matrix.transpose()
     }
@@ -69,5 +67,24 @@ impl Cipher<Russian> {
     pub fn get_determinant(&self, matrix: DMatrix<isize>) -> isize {
         let det: f64 = matrix.map(|v| nalgebra::ComplexField::from_real(v as f64)).determinant();
         return det as isize
+    }
+
+    pub fn encrypt(&self, message: &str) -> (String, String) {
+        let key = self.generate_key();
+        let mut rows = Vec::new();
+        let mut matrix_message = self.matrix_from(message);
+        let matrix_key = self.matrix_from(&key.to_owned());
+
+        for row_number in 0..matrix_message.nrows() {
+            rows.push(matrix_message.row(row_number) * &matrix_key);
+        }
+
+        let result = DMatrix::from_rows(&rows)
+            .map(|v| math::cropping_modulo(v, self.alphabet.size() as isize))
+            .into_iter()
+            .map(|v| self.alphabet.get_char(*v).unwrap())
+            .collect::<String>();
+
+        (key, result)
     }
 }
