@@ -2,6 +2,16 @@ pub fn cropping_modulo(value: isize, modulo: isize) -> usize {
     ((modulo + (value % modulo)) % modulo) as usize
 }
 
+#[derive(Debug)]
+pub struct Fraction {
+    pub nominator: isize,
+    pub denominator: isize,
+}
+
+pub fn multiplicative_inverse(frac: &Fraction) {
+    
+}
+
 // Возвращаемый результат представляет собой структуру
 // gcd - НОД
 // x - первый коэффициент
