@@ -28,7 +28,7 @@ pub fn get_adjugate_matrix(matrix: &DMatrix<isize>) -> DMatrix<isize> {
             .determinant();
 
         // I hope it doesn't break
-        (-1 as isize).pow((row + col) as u32) * (minor_r_c as isize)
+        (-1_isize).pow((row + col) as u32) * (minor_r_c as isize)
     })
 }
 
@@ -36,11 +36,9 @@ pub fn find_modulary_inverse_matrix(
     matrix: &DMatrix<isize>,
     modulo: isize,
 ) -> Option<DMatrix<isize>> {
-    let det = get_modularly_inverse(find_matrix_determinant(&matrix), modulo);
+    let det = get_modularly_inverse(find_matrix_determinant(matrix), modulo);
 
-    if det.is_none() {
-        return None;
-    }
+    det?;
 
     let det = cropping_modulo(det.unwrap(), modulo) as isize;
 
@@ -57,7 +55,7 @@ pub fn find_matrix_determinant(matrix: &DMatrix<isize>) -> isize {
     let det: f64 = matrix
         .map(|v| nalgebra::ComplexField::from_real(v as f64))
         .determinant();
-    return det as isize;
+    det as isize
 }
 
 // Возвращаемый результат представляет собой структуру
@@ -82,13 +80,7 @@ pub fn extend_gcd(a: isize, b: isize) -> GCDResult {
         (old_s, s) = (s, old_s - quotinent * s);
     }
 
-    let bezout_t: isize;
-
-    if b != 0 {
-        bezout_t = (old_r - old_s * a) / b;
-    } else {
-        bezout_t = 0;
-    }
+    let bezout_t: isize = if b != 0 { (old_r - old_s * a) / b } else { 0 };
 
     GCDResult {
         gcd: old_r,

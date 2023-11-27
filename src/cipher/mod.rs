@@ -78,13 +78,11 @@ impl Cipher<Russian> {
             rows.push(message_matrix.row(row_number) * &key_matrix);
         }
 
-        let result = DMatrix::from_rows(&rows)
+        DMatrix::from_rows(&rows)
             .map(|v| math::cropping_modulo(v, self.alphabet.size() as isize))
             .into_iter()
             .map(|v| self.alphabet.get_char(*v).unwrap())
-            .collect::<String>();
-
-        result
+            .collect::<String>()
     }
 
     pub fn encrypt(&self, message: &str) -> (String, String) {
@@ -120,9 +118,7 @@ impl Cipher<Russian> {
         let inverted =
             math::find_modulary_inverse_matrix(&matrix_key, self.alphabet.size() as isize);
 
-        if inverted.is_none() {
-            return None;
-        }
+        inverted.as_ref()?;
 
         let inverted = inverted.unwrap();
 
