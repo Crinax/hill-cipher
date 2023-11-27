@@ -1,4 +1,4 @@
-use std::{collections::HashMap, borrow::Cow};
+use std::{borrow::Cow, collections::HashMap};
 
 use super::Alphabet;
 
@@ -8,17 +8,18 @@ pub struct Russian {
 
 impl Russian {
     const ALPHABET: Cow<'static, str> = Cow::Borrowed(
-        "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ ,.?!-"
+        "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ ,.?!-:;\"@()№",
     );
 
     pub fn new() -> Self {
-        let alphabets_and_index: HashMap<char, isize> =
-            Self::ALPHABET
+        let alphabets_and_index: HashMap<char, isize> = Self::ALPHABET
             .chars()
             .enumerate()
             .map(|(i, c)| (c, i as isize))
             .collect();
-        Self { map: alphabets_and_index }
+        Self {
+            map: alphabets_and_index,
+        }
     }
 }
 
@@ -36,7 +37,7 @@ impl Alphabet for Russian {
     }
 
     fn size(&self) -> usize {
-        return Russian::ALPHABET.chars().count()
+        return Russian::ALPHABET.chars().count();
     }
 
     fn get_char(&self, index: usize) -> Option<char> {

@@ -1,15 +1,63 @@
+use nalgebra::{ComplexField, DMatrix};
+
 pub fn cropping_modulo(value: isize, modulo: isize) -> usize {
     ((modulo + (value % modulo)) % modulo) as usize
 }
 
-#[derive(Debug)]
-pub struct Fraction {
-    pub nominator: isize,
-    pub denominator: isize,
+pub fn get_modularly_inverse(a: isize, b: isize) -> Option<isize> {
+    let gcd_result: GCDResult = extend_gcd(a, b);
+
+    if gcd_result.gcd != 1 {
+        return None;
+    }
+
+    if gcd_result.x > 0 {
+        Some(gcd_result.x)
+    } else {
+        Some(b + gcd_result.x)
+    }
 }
 
-pub fn multiplicative_inverse(frac: &Fraction) {
-    
+pub fn get_adjugate_matrix(matrix: &DMatrix<isize>) -> DMatrix<isize> {
+    matrix.transpose().map_with_location(|row, col, _| {
+        let minor_r_c: f64 = matrix
+            .clone()
+            .remove_row(row)
+            .remove_column(col)
+            .map(|v| ComplexField::from_real(v as f64))
+            .determinant();
+
+        // I hope it doesn't break
+        (-1 as isize).pow((row + col) as u32) * (minor_r_c as isize)
+    })
+}
+
+pub fn find_modulary_inverse_matrix(
+    matrix: &DMatrix<isize>,
+    modulo: isize,
+) -> Option<DMatrix<isize>> {
+    let det = get_modularly_inverse(find_matrix_determinant(&matrix), modulo);
+
+    if det.is_none() {
+        return None;
+    }
+
+    let det = cropping_modulo(det.unwrap(), modulo) as isize;
+
+    // And hope it too (but it break down)
+    Some(
+        get_adjugate_matrix(matrix)
+            .map(|v| ((v % modulo) * det) % modulo)
+            .transpose()
+            .map(|v| if v >= 0 { v } else { modulo + v }),
+    )
+}
+
+pub fn find_matrix_determinant(matrix: &DMatrix<isize>) -> isize {
+    let det: f64 = matrix
+        .map(|v| nalgebra::ComplexField::from_real(v as f64))
+        .determinant();
+    return det as isize;
 }
 
 // Возвращаемый результат представляет собой структуру
@@ -48,4 +96,3 @@ pub fn extend_gcd(a: isize, b: isize) -> GCDResult {
         y: bezout_t,
     }
 }
-

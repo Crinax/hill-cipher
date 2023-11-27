@@ -2,10 +2,9 @@ pub mod alphabets;
 
 use std::collections::HashMap;
 
+use crate::math::{self, extend_gcd};
 use nalgebra::{DMatrix, Dyn};
 use rand::Rng;
-
-use crate::math;
 
 use self::alphabets::Russian;
 
@@ -17,11 +16,17 @@ pub trait Alphabet {
     fn get_char(&self, index: usize) -> Option<char>;
 }
 
-pub struct Cipher<T> where T: Alphabet {
+pub struct Cipher<T>
+where
+    T: Alphabet,
+{
     alphabet: T,
 }
 
-impl<T> Cipher<T> where T: Alphabet {
+impl<T> Cipher<T>
+where
+    T: Alphabet,
+{
     pub fn new(alphabet: T) -> Self {
         Self { alphabet }
     }
@@ -36,7 +41,8 @@ impl Cipher<Russian> {
             another_message = another_message + &self.generate_random_string(3 - message_len % 3);
         }
 
-        another_message.chars()
+        another_message
+            .chars()
             .map(|c| self.alphabet.code(&c).unwrap())
             .collect()
     }
@@ -47,11 +53,12 @@ impl Cipher<Russian> {
     }
 
     pub fn generate_random_string(&self, count: usize) -> String {
-        (0..count).map(|_| {
-            let random = rand::thread_rng().gen_range(0..self.alphabet.size());
+        (0..count)
+            .map(|_| {
+                let random: usize = rand::thread_rng().gen_range(0..self.alphabet.size());
 
-            self.alphabet.get_char(random).unwrap()
-        })
+                self.alphabet.get_char(random).unwrap()
+            })
             .collect()
     }
 
@@ -60,18 +67,12 @@ impl Cipher<Russian> {
         "сед".to_owned() + &random_part
     }
 
-    pub fn get_transpose(&self, matrix: DMatrix<isize>) -> DMatrix<isize> {
-        matrix.transpose()
-    }
-
-    pub fn get_determinant(&self, matrix: &DMatrix<isize>) -> isize {
-        let det: f64 = matrix.map(|v| nalgebra::ComplexField::from_real(v as f64)).determinant();
-        return det as isize
-    }
-
-    pub fn encryption_decryption(&self, message_matrix: DMatrix<isize>, key_matrix: DMatrix<isize>) -> &str {
+    pub fn encryption_decryption(
+        &self,
+        message_matrix: DMatrix<isize>,
+        key_matrix: DMatrix<isize>,
+    ) -> String {
         let mut rows = Vec::new();
-
 
         for row_number in 0..message_matrix.nrows() {
             rows.push(message_matrix.row(row_number) * &key_matrix);
@@ -83,39 +84,48 @@ impl Cipher<Russian> {
             .map(|v| self.alphabet.get_char(*v).unwrap())
             .collect::<String>();
 
-        &result.to_owned()
+        result
     }
 
-    pub fn encrypt(&self, message: &str) -> (&str, &str) {
-        let key = self.generate_key();
-        let matrix_message = self.matrix_from(message);
-        let mut matrix_key = self.matrix_from(&key.to_owned());
-        let mut is_valid_key = math::cropping_modulo(
-            self.get_determinant(&matrix_key),
-            self.alphabet.size() as isize
-        ) != 0;
-        let mut counter = 1;
+    pub fn encrypt(&self, message: &str) -> (String, String) {
+        let alphabet_size = self.alphabet.size() as isize;
+        let key = {
+            let mut is_valid_key = false;
+            let mut counter = 0;
+            let mut raw_key: String = "".to_owned();
 
-        // It's bad way, sry
-        while !is_valid_key {
-            counter += 1;
-            matrix_key = self.matrix_from(&key.to_owned());
-            is_valid_key = math::cropping_modulo(
-                self.get_determinant(&matrix_key),
-                self.alphabet.size() as isize
-            ) != 0;
-        }
+            // It's bad way, sry
+            while !is_valid_key {
+                counter += 1;
+                raw_key = self.generate_key();
+                let matrix = self.matrix_from(&raw_key);
+                let det = math::find_matrix_determinant(&matrix);
+                let gcd = extend_gcd(alphabet_size, det);
 
-        println!("Cycles: {:?}", counter);
+                is_valid_key = gcd.gcd == 1;
+            }
 
-        (&key.to_owned(), self.encryption_decryption(matrix_message, matrix_key))
+            println!("Cycles: {:?}", counter);
+            raw_key
+        };
+        let encrypted =
+            self.encryption_decryption(self.matrix_from(message), self.matrix_from(&key));
+
+        (key, encrypted)
     }
 
-    pub fn decrypt(&self, encrypted: &str, key: &str) -> &str {
+    pub fn decrypt(&self, encrypted: &str, key: &str) -> Option<String> {
         let matrix_key = self.matrix_from(key);
         let message_matrix = self.matrix_from(encrypted);
-        let inverted = matrix_key.try_inverse().unwrap();
+        let inverted =
+            math::find_modulary_inverse_matrix(&matrix_key, self.alphabet.size() as isize);
 
-        self.encryption_decryption(message_matrix, inverted)
+        if inverted.is_none() {
+            return None;
+        }
+
+        let inverted = inverted.unwrap();
+
+        Some(self.encryption_decryption(message_matrix, inverted))
     }
 }
