@@ -64,19 +64,17 @@ impl Cipher<Russian> {
         matrix.transpose()
     }
 
-    pub fn get_determinant(&self, matrix: DMatrix<isize>) -> isize {
+    pub fn get_determinant(&self, matrix: &DMatrix<isize>) -> isize {
         let det: f64 = matrix.map(|v| nalgebra::ComplexField::from_real(v as f64)).determinant();
         return det as isize
     }
 
-    pub fn encrypt(&self, message: &str) -> (String, String) {
-        let key = self.generate_key();
+    pub fn encryption_decryption(&self, message_matrix: DMatrix<isize>, key_matrix: DMatrix<isize>) -> &str {
         let mut rows = Vec::new();
-        let mut matrix_message = self.matrix_from(message);
-        let matrix_key = self.matrix_from(&key.to_owned());
 
-        for row_number in 0..matrix_message.nrows() {
-            rows.push(matrix_message.row(row_number) * &matrix_key);
+
+        for row_number in 0..message_matrix.nrows() {
+            rows.push(message_matrix.row(row_number) * &key_matrix);
         }
 
         let result = DMatrix::from_rows(&rows)
@@ -85,6 +83,39 @@ impl Cipher<Russian> {
             .map(|v| self.alphabet.get_char(*v).unwrap())
             .collect::<String>();
 
-        (key, result)
+        &result.to_owned()
+    }
+
+    pub fn encrypt(&self, message: &str) -> (&str, &str) {
+        let key = self.generate_key();
+        let matrix_message = self.matrix_from(message);
+        let mut matrix_key = self.matrix_from(&key.to_owned());
+        let mut is_valid_key = math::cropping_modulo(
+            self.get_determinant(&matrix_key),
+            self.alphabet.size() as isize
+        ) != 0;
+        let mut counter = 1;
+
+        // It's bad way, sry
+        while !is_valid_key {
+            counter += 1;
+            matrix_key = self.matrix_from(&key.to_owned());
+            is_valid_key = math::cropping_modulo(
+                self.get_determinant(&matrix_key),
+                self.alphabet.size() as isize
+            ) != 0;
+        }
+
+        println!("Cycles: {:?}", counter);
+
+        (&key.to_owned(), self.encryption_decryption(matrix_message, matrix_key))
+    }
+
+    pub fn decrypt(&self, encrypted: &str, key: &str) -> &str {
+        let matrix_key = self.matrix_from(key);
+        let message_matrix = self.matrix_from(encrypted);
+        let inverted = matrix_key.try_inverse().unwrap();
+
+        self.encryption_decryption(message_matrix, inverted)
     }
 }
