@@ -10,8 +10,9 @@ fn main() {
     let cipher = Cipher::new(ru);
     let message = input!("Enter message in ru: ");
     let encrypted = cipher.encrypt(&message);
-    let descrypted = cipher.decrypt(&encrypted.1, &encrypted.0);
+    let decrypted = cipher.decrypt(&encrypted.1, &encrypted.0);
 
-    println!("Encrypted: {encrypted:?}");
-    println!("Decrypted: {descrypted:?}");
+    println!("Encrypted: {:?} with key {:?}", encrypted.1, encrypted.0);
+
+    println!("Decrypted: {:?}", decrypted.unwrap_or_else(|| "None".into()));
 }
